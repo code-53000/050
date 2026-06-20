@@ -9,6 +9,8 @@ import {
   getActiveLoans,
   addLoan as dbAddLoan,
   returnLoan as dbReturnLoan,
+  returnLoansByCartId as dbReturnLoansByCartId,
+  deleteLoansByCartId as dbDeleteLoansByCartId,
   getLoansByCartId,
 } from '../db/loans'
 import { STATUS } from '../constants'
@@ -50,9 +52,23 @@ export const useCartStore = create((set, get) => ({
   updateCart: async (id, updates) => {
     set({ error: null })
     try {
+      const prevCart = get().carts.find(c => c.id === id)
       const updated = await dbUpdateCart(id, updates)
+      let activeLoansUpdate = {}
+      if (
+        prevCart &&
+        prevCart.status === STATUS.LENT &&
+        updates.status &&
+        updates.status !== STATUS.LENT
+      ) {
+        await dbReturnLoansByCartId(id)
+        activeLoansUpdate = {
+          activeLoans: get().activeLoans.filter(l => l.cartId !== id),
+        }
+      }
       set(state => ({
         carts: state.carts.map(c => (c.id === id ? updated : c)),
+        ...activeLoansUpdate,
       }))
       return updated
     } catch (e) {
@@ -64,9 +80,11 @@ export const useCartStore = create((set, get) => ({
   deleteCart: async (id) => {
     set({ error: null })
     try {
+      await dbDeleteLoansByCartId(id)
       await dbDeleteCart(id)
       set(state => ({
         carts: state.carts.filter(c => c.id !== id),
+        activeLoans: state.activeLoans.filter(l => l.cartId !== id),
       }))
     } catch (e) {
       set({ error: e.message })

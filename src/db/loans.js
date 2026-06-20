@@ -48,3 +48,28 @@ export async function deleteLoan(id) {
   const db = await getDb()
   await db.delete(STORES.LOANS, id)
 }
+
+export async function returnLoansByCartId(cartId) {
+  const db = await getDb()
+  const loans = await db.getAllFromIndex(STORES.LOANS, 'cartId', cartId)
+  const active = loans.filter(l => !l.returned)
+  for (const loan of active) {
+    await db.put(STORES.LOANS, {
+      ...loan,
+      returned: true,
+      returnDate: new Date().toISOString(),
+    })
+  }
+  return active
+}
+
+export async function deleteLoansByCartId(cartId) {
+  const db = await getDb()
+  const loans = await db.getAllFromIndex(STORES.LOANS, 'cartId', cartId)
+  const tx = db.transaction(STORES.LOANS, 'readwrite')
+  for (const loan of loans) {
+    tx.store.delete(loan.id)
+  }
+  await tx.done
+  return loans
+}
