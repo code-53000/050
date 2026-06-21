@@ -131,8 +131,15 @@ export const useCartStore = create((set, get) => ({
     }
   },
 
-  markAsSold: async (cartId) => {
-    return get().updateCart(cartId, { status: STATUS.SOLD })
+  markAsSold: async (cartId, saleData = {}) => {
+    const updates = { status: STATUS.SOLD }
+    if (saleData.soldDate) updates.soldDate = saleData.soldDate
+    if (saleData.soldPrice !== undefined && saleData.soldPrice !== null && saleData.soldPrice !== '') {
+      updates.soldPrice = Number(saleData.soldPrice)
+    }
+    if (saleData.soldChannel) updates.soldChannel = saleData.soldChannel
+    if (saleData.soldNote !== undefined) updates.soldNote = saleData.soldNote
+    return get().updateCart(cartId, updates)
   },
 
   getLoansForCart: async (cartId) => {

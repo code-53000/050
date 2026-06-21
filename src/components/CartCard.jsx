@@ -1,5 +1,13 @@
-import { PLATFORMS, CONDITIONS, STATUS_LABELS, STATUS } from '../constants'
+import { PLATFORMS, CONDITIONS, STATUS_LABELS, STATUS, SALE_CHANNEL_LABELS } from '../constants'
 import { useCartStore } from '../store/useCartStore'
+
+function formatShortDate(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return d.getFullYear() + '/' +
+    String(d.getMonth() + 1).padStart(2, '0') + '/' +
+    String(d.getDate()).padStart(2, '0')
+}
 
 export default function CartCard({ cart, onEdit, onLend, onReturn, onSell, onDelete }) {
   const getActiveLoanForCart = useCartStore(s => s.getActiveLoanForCart)
@@ -8,6 +16,7 @@ export default function CartCard({ cart, onEdit, onLend, onReturn, onSell, onDel
   const platformLabel = PLATFORMS.find(p => p.value === cart.platform)?.label || cart.platform
   const conditionLabel = CONDITIONS.find(c => c.value === cart.condition)?.label || cart.condition
   const statusLabel = STATUS_LABELS[cart.status] || cart.status
+  const channelLabel = SALE_CHANNEL_LABELS[cart.soldChannel]
 
   return (
     <div className={`cart-card status-${cart.status}`}>
@@ -24,6 +33,23 @@ export default function CartCard({ cart, onEdit, onLend, onReturn, onSell, onDel
             借给：{activeLoan.borrower}
           </p>
         )}
+        {cart.status === STATUS.SOLD && (
+          <>
+            <p style={{ color: '#566573' }}>
+              售出日期：{formatShortDate(cart.soldDate) || '未记录'}
+            </p>
+            {cart.soldPrice !== undefined && cart.soldPrice !== null && !isNaN(cart.soldPrice) && (
+              <p style={{ color: '#27ae60', fontWeight: 600 }}>
+                成交价：¥{Number(cart.soldPrice).toFixed(2)}
+              </p>
+            )}
+            {channelLabel && (
+              <p style={{ color: '#566573' }}>
+                渠道：{channelLabel}
+              </p>
+            )}
+          </>
+        )}
       </div>
 
       <div className="cart-tags">
@@ -34,6 +60,11 @@ export default function CartCard({ cart, onEdit, onLend, onReturn, onSell, onDel
       {cart.note && (
         <p style={{ fontSize: '12px', color: '#888', marginTop: '8px' }}>
           {cart.note}
+        </p>
+      )}
+      {cart.status === STATUS.SOLD && cart.soldNote && (
+        <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+          售出备注：{cart.soldNote}
         </p>
       )}
 

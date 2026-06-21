@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useCartStore } from './store/useCartStore'
-import { STATUS } from './constants'
+import { STATUS, VIEW_MODES } from './constants'
 import FilterBar from './components/FilterBar'
 import CartList from './components/CartList'
 import LoanPanel from './components/LoanPanel'
 import CartForm from './components/CartForm'
 import LoanForm from './components/LoanForm'
+import SaleForm from './components/SaleForm'
+import SalesRecords from './components/SalesRecords'
 import { loadSampleData } from './utils/sampleData'
 
 function Modal({ title, onClose, children }) {
@@ -22,10 +24,13 @@ function Modal({ title, onClose, children }) {
 export default function App() {
   const { fetchAll, addCart, updateCart, deleteCart, lendCart, returnCart, markAsSold, carts, activeLoans } = useCartStore()
 
+  const [viewMode, setViewMode] = useState(VIEW_MODES.LIST)
   const [showCartForm, setShowCartForm] = useState(false)
   const [editingCart, setEditingCart] = useState(null)
   const [showLoanForm, setShowLoanForm] = useState(false)
   const [lendingCart, setLendingCart] = useState(null)
+  const [showSaleForm, setShowSaleForm] = useState(false)
+  const [sellingCart, setSellingCart] = useState(null)
 
   useEffect(() => {
     fetchAll()
@@ -86,8 +91,17 @@ export default function App() {
   }
 
   const handleSellCart = (cart) => {
-    if (confirm(`确定要把《${cart.name}》标记为已出掉吗？`)) {
-      markAsSold(cart.id)
+    setSellingCart(cart)
+    setShowSaleForm(true)
+  }
+
+  const handleSubmitSale = async (saleData) => {
+    try {
+      await markAsSold(sellingCart.id, saleData)
+      setShowSaleForm(false)
+      setSellingCart(null)
+    } catch (e) {
+      alert('登记失败：' + e.message)
     }
   }
 
@@ -140,6 +154,21 @@ export default function App() {
         </div>
       </div>
 
+      <div className="view-tabs">
+        <button
+          className={`view-tab ${viewMode === VIEW_MODES.LIST ? 'active' : ''}`}
+          onClick={() => setViewMode(VIEW_MODES.LIST)}
+        >
+          卡带列表
+        </button>
+        <button
+          className={`view-tab ${viewMode === VIEW_MODES.SALES ? 'active' : ''}`}
+          onClick={() => setViewMode(VIEW_MODES.SALES)}
+        >
+          售出记录
+        </button>
+      </div>
+
       <div className="main-layout">
         <aside className="sidebar">
           <FilterBar />
@@ -147,13 +176,17 @@ export default function App() {
         </aside>
 
         <main className="content">
-          <CartList
-            onEditCart={handleEditCart}
-            onLendCart={handleLendCart}
-            onReturnCart={handleReturnCart}
-            onSellCart={handleSellCart}
-            onDeleteCart={handleDeleteCart}
-          />
+          {viewMode === VIEW_MODES.LIST ? (
+            <CartList
+              onEditCart={handleEditCart}
+              onLendCart={handleLendCart}
+              onReturnCart={handleReturnCart}
+              onSellCart={handleSellCart}
+              onDeleteCart={handleDeleteCart}
+            />
+          ) : (
+            <SalesRecords />
+          )}
         </main>
       </div>
 
@@ -179,6 +212,19 @@ export default function App() {
             cart={lendingCart}
             onSubmit={handleSubmitLoan}
             onCancel={() => { setShowLoanForm(false); setLendingCart(null) }}
+          />
+        </Modal>
+      )}
+
+      {showSaleForm && sellingCart && (
+        <Modal
+          title="登记售出"
+          onClose={() => { setShowSaleForm(false); setSellingCart(null) }}
+        >
+          <SaleForm
+            cart={sellingCart}
+            onSubmit={handleSubmitSale}
+            onCancel={() => { setShowSaleForm(false); setSellingCart(null) }}
           />
         </Modal>
       )}

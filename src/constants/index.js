@@ -25,3 +25,20 @@ export const STATUS_LABELS = {
   [STATUS.LENT]: '借出中',
   [STATUS.SOLD]: '已出掉',
 }
+
+export const SALE_CHANNELS = [
+  { value: 'offline', label: '面交' },
+  { value: 'xianyu', label: '闲鱼' },
+  { value: 'other', label: '其他' },
+]
+
+export const SALE_CHANNEL_LABELS = {
+  offline: '面交',
+  xianyu: '闲鱼',
+  other: '其他',
+}
+
+export const VIEW_MODES = {
+  LIST: 'list',
+  SALES: 'sales',
+}
